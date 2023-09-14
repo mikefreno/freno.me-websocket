@@ -1,0 +1,24 @@
+org: mikefreno
+app: freno-me-websocket
+service: freno-me-websocket
+frameworkVersion: '3'
+plugins:
+  - serverless-dotenv-plugin
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+
+functions:
+  connect:
+    handler: src/connect.js
+    events:
+      - websocket: $connect
+  disconnect:
+    handler: src/disconnect.js
+    events:
+      - websocket: $disconnect
+  default:
+    handler: src/default.js
+    events:
+      - websocket: $default
