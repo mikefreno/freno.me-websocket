@@ -1,10 +1,11 @@
 //@ts-check
-import { ConnectionFactory } from "./ConnectionFactory";
-import * as AWS from "aws-sdk";
+const { ConnectionFactory } = require("./ConnectionFactory");
+const AWS = require("aws-sdk");
+
 /**
  * @typedef {Object} Payload
  * @property {"comment"|"channelUpdate"} messageType
- * @property {?string} commentType
+ * @property {"create" | "update" | "delete" | undefined} commentType
  * @property {string | undefined} commentBody
  * @property {"blog" | "project"} postType
  * @property {number | undefined} blog_id

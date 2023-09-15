@@ -1,6 +1,7 @@
 //@ts-check
-import { ConnectionFactory } from "./ConnectionFactory";
-import * as AWS from "aws-sdk";
+const { ConnectionFactory } = require("./ConnectionFactory");
+const AWS = require("aws-sdk");
+
 /**
  * @param {import("aws-lambda").APIGatewayProxyEvent} event
  */

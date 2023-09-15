@@ -1,5 +1,5 @@
 //@ts-check
-import { ConnectionFactory } from "./ConnectionFactory";
+const { ConnectionFactory } = require("./ConnectionFactory");
 
 /**
  * @param {import("aws-lambda").APIGatewayProxyEvent} event

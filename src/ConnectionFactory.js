@@ -1,5 +1,5 @@
 //@ts-check
-import { connect } from "@planetscale/database";
+const { connect } = require("@planetscale/database");
 
 export function ConnectionFactory() {
   const config = {
