@@ -2,6 +2,7 @@ org: mikefreno
 app: freno-me-websocket
 service: freno-me-websocket
 frameworkVersion: '3'
+
 plugins:
   - serverless-dotenv-plugin
 
@@ -11,14 +12,14 @@ provider:
 
 functions:
   connect:
-    handler: src/connect.js
+    handler: src/connect.connect
     events:
       - websocket: $connect
   disconnect:
-    handler: src/disconnect.js
+    handler: src/disconnect.disconnect
     events:
       - websocket: $disconnect
   default:
-    handler: src/default.js
+    handler: src/default.handler
     events:
       - websocket: $default

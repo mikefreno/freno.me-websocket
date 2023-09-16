@@ -1,7 +1,7 @@
 //@ts-check
 const { connect } = require("@planetscale/database");
 
-export function ConnectionFactory() {
+function ConnectionFactory() {
   const config = {
     url: process.env.DATABASE_URL,
   };
@@ -9,3 +9,6 @@ export function ConnectionFactory() {
   const conn = connect(config);
   return conn;
 }
+module.exports = {
+  ConnectionFactory,
+};

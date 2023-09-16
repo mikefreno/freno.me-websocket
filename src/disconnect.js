@@ -4,7 +4,7 @@ const { ConnectionFactory } = require("./ConnectionFactory");
 /**
  * @param {import("aws-lambda").APIGatewayProxyEvent} event
  */
-export const disconnect = async (event) => {
+const disconnect = async (event) => {
   const connectionId = event.requestContext.connectionId;
   if (connectionId) {
     const conn = ConnectionFactory();
@@ -12,4 +12,7 @@ export const disconnect = async (event) => {
     const results = await conn.execute(query, [connectionId]);
     console.log(results);
   }
+};
+module.exports = {
+  disconnect,
 };

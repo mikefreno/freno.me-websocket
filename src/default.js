@@ -26,7 +26,7 @@ const AWS = require("aws-sdk");
 /**
  * @param {import("aws-lambda").APIGatewayProxyEvent} event
  */
-export async function handler(event) {
+async function handler(event) {
   /** @type {Payload} */
   //@ts-ignore
   const payload = JSON.parse(event.body);
@@ -43,7 +43,7 @@ export async function handler(event) {
     if (postType === "blog") {
       const blog_id = payload.blog_id;
       //collect connections to above post
-      const collectionQuery = "SELECT * FROM Blog WHERE id = ?";
+      const collectionQuery = "SELECT * FROM Connection WHERE blog_id = ?";
       const collectionResult = await conn.execute(collectionQuery, [blog_id]);
       const connections = collectionResult.rows;
       if (commentType === "create") {
@@ -55,7 +55,7 @@ export async function handler(event) {
         await broadcaster(connections, client);
         return JSON.stringify({ status: 202 });
       } else if (commentType === "update") {
-        const query = `UPDATE Comment SET body = ? WHERE id = ?`;
+        const query = `UPDATE Comment SET body = ?, WHERE id = ?`;
         await conn.execute(query, [commentBody, payload.comment_id]);
         //broadcast to users in channel
         await broadcaster(connections, client);
@@ -73,7 +73,7 @@ export async function handler(event) {
     } else if (postType === "project") {
       const project_id = payload.project_id;
       //collect connections to above post
-      const collectionQuery = "SELECT * FROM project WHERE id = ?";
+      const collectionQuery = "SELECT * FROM Connection WHERE project_id = ?";
       const collectionResult = await conn.execute(collectionQuery, [
         project_id,
       ]);
@@ -88,14 +88,14 @@ export async function handler(event) {
         return JSON.stringify({ status: 202 });
       } else if (commentType === "update") {
         //update comment message
-        const query = `UPDATE Comment SET body = ? WHERE id = ?`;
+        const query = `UPDATE Comment SET body = ?, WHERE id = ?,`;
         await conn.execute(query, [commentBody, payload.comment_id]);
         //broadcast to users in channel
         await broadcaster(connections, client);
         return JSON.stringify({ status: 201 });
       } else if (commentType === "delete") {
         //'delete' comment message
-        const query = `UPDATE Comment SET body = ? WHERE id = ?`;
+        const query = `UPDATE Comment SET body = ?, WHERE id = ?,`;
         await conn.execute(query, [
           `[comment removed by ${payload.deletionAgent}]`,
           payload.comment_id,
@@ -109,13 +109,13 @@ export async function handler(event) {
     const connectionId = event.requestContext.connectionId;
     if (payload.postType === "blog") {
       const query =
-        "UPDATE Connection SET blog_id = ? project_id = ? user_id = ? WHERE connection_id = ?";
+        "UPDATE Connection SET blog_id = ?, project_id = ?, user_id = ?, WHERE connection_id = ?";
       const params = [payload.blog_id, null, payload.invoker_id, connectionId];
       await conn.execute(query, params);
       return JSON.stringify({ status: 201 });
     } else if (payload.postType === "project") {
       const query =
-        "UPDATE Connection SET blog_id = ? project_id = ? user_id = ? WHERE connection_id = ?";
+        "UPDATE Connection SET blog_id = ?, project_id = ?, user_id = ?, WHERE connection_id = ?";
       const params = [payload.project_id, payload.invoker_id, connectionId];
       await conn.execute(query, params);
       return JSON.stringify({ status: 201 });
@@ -147,4 +147,8 @@ const broadcaster = async (connections, client) => {
       }
     }),
   );
+};
+
+module.exports = {
+  handler,
 };
