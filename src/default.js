@@ -1,7 +1,5 @@
 //@ts-check
-const { ConnectionFactory } = require("./ConnectionFactory");
-const AWS = require("aws-sdk");
-
+import { ConnectionFactory } from "./helper_functions";
 /**
  * @typedef {Object} Payload
  * @property {"comment"|"channelUpdate"} messageType
@@ -28,127 +26,84 @@ const AWS = require("aws-sdk");
  */
 async function handler(event) {
   /** @type {Payload} */
-  //@ts-ignore
-  const payload = JSON.parse(event.body);
-  const messageType = payload.messageType;
-  let conn = ConnectionFactory();
-  const client = new AWS.ApiGatewayManagementApi({
-    endpoint: `https://${event.requestContext.domainName}/${event.requestContext.stage}`,
-  });
-  if (messageType === "comment") {
-    const commentType = payload.commentType;
-    const postType = payload.postType;
-    const parent_comment_id = payload.parent_comment_id;
-    const commentBody = payload.commentBody;
-    if (postType === "blog") {
-      const blog_id = payload.blog_id;
-      //collect connections to above post
-      const collectionQuery = "SELECT * FROM Connection WHERE blog_id = ?";
-      const collectionResult = await conn.execute(collectionQuery, [blog_id]);
-      const connections = collectionResult.rows;
-      if (commentType === "create") {
-        //insert message to database
-        const query = `INSERT INTO Comment (body, blog_id, parent_comment_id) VALUES (?, ?, ?)`;
-        const params = [commentBody, blog_id, parent_comment_id];
-        await conn.execute(query, params);
-        //broadcast to users in channel
-        await broadcaster(connections, client);
-        return JSON.stringify({ status: 202 });
-      } else if (commentType === "update") {
-        const query = `UPDATE Comment SET body = ?, WHERE id = ?`;
-        await conn.execute(query, [commentBody, payload.comment_id]);
-        //broadcast to users in channel
-        await broadcaster(connections, client);
-        return JSON.stringify({ status: 201 });
-      } else if (commentType === "delete") {
-        const query = `UPDATE Comment SET body = ? WHERE id = ?`;
-        await conn.execute(query, [
-          `[comment removed by ${payload.deletionAgent}]`,
-          payload.comment_id,
-        ]);
-        //broadcast to users in channel
-        await broadcaster(connections, client);
-        return JSON.stringify({ status: 201 });
-      }
-    } else if (postType === "project") {
-      const project_id = payload.project_id;
-      //collect connections to above post
-      const collectionQuery = "SELECT * FROM Connection WHERE project_id = ?";
-      const collectionResult = await conn.execute(collectionQuery, [
-        project_id,
-      ]);
-      const connections = collectionResult.rows;
-      if (commentType === "create") {
-        //insert message to database
-        const query = `INSERT INTO Comment (body, project_id, parent_comment_id) VALUES (?, ?, ?)`;
-        const params = [commentBody, project_id, parent_comment_id];
-        await conn.execute(query, params);
-        //broadcast to users in channel
-        await broadcaster(connections, client);
-        return JSON.stringify({ status: 202 });
-      } else if (commentType === "update") {
-        //update comment message
-        const query = `UPDATE Comment SET body = ?, WHERE id = ?,`;
-        await conn.execute(query, [commentBody, payload.comment_id]);
-        //broadcast to users in channel
-        await broadcaster(connections, client);
-        return JSON.stringify({ status: 201 });
-      } else if (commentType === "delete") {
-        //'delete' comment message
-        const query = `UPDATE Comment SET body = ?, WHERE id = ?,`;
-        await conn.execute(query, [
-          `[comment removed by ${payload.deletionAgent}]`,
-          payload.comment_id,
-        ]);
-        //broadcast to users in channel
-        await broadcaster(connections, client);
-        return JSON.stringify({ status: 201 });
-      }
-    }
-  } else if (messageType === "channelUpdate") {
+  if (event.body) {
+    const payload = JSON.parse(event.body);
+    let conn = ConnectionFactory();
     const connectionId = event.requestContext.connectionId;
-    if (payload.postType === "blog") {
-      const query =
-        "UPDATE Connection SET blog_id = ?, project_id = ?, user_id = ?, WHERE connection_id = ?";
-      const params = [payload.blog_id, null, payload.invoker_id, connectionId];
-      await conn.execute(query, params);
-      return JSON.stringify({ status: 201 });
-    } else if (payload.postType === "project") {
-      const query =
-        "UPDATE Connection SET blog_id = ?, project_id = ?, user_id = ?, WHERE connection_id = ?";
-      const params = [payload.project_id, payload.invoker_id, connectionId];
-      await conn.execute(query, params);
-      return JSON.stringify({ status: 201 });
+    try {
+      if (payload.postType === "blog") {
+        const query =
+          "UPDATE Connection SET blog_id = ?, project_id = ?, user_id = ? WHERE connection_id = ?";
+        const params = [
+          payload.blog_id,
+          null,
+          payload.invoker_id,
+          connectionId,
+        ];
+        await conn.execute(query, params);
+        return JSON.stringify({ status: 201 });
+      } else if (payload.postType === "project") {
+        const query =
+          "UPDATE Connection SET blog_id = ?, project_id = ?, user_id = ? WHERE connection_id = ?";
+        const params = [payload.project_id, payload.invoker_id, connectionId];
+        await conn.execute(query, params);
+        return JSON.stringify({ status: 201 });
+      }
+    } catch (e) {
+      console.error(e.message);
+      console.error(e.stack);
     }
   }
 }
-
 /**
- * @param {import("aws-sdk").ApiGatewayManagementApi} client
+ * @param {import("aws-lambda").APIGatewayProxyEvent} event
  */
-const broadcaster = async (connections, client) => {
-  Promise.all(
-    connections.map(async (connection) => {
-      try {
-        const output = {
-          //@ts-ignore
-          ConnectionId: connection.connection_id,
-          Data: JSON.stringify("update"),
-        };
-        await client.postToConnection(output).promise();
-      } catch (e) {
-        if (e.statusCode === 410) {
-          //connection not availible, delete db entry
-          const deletionQuery = `DELETE FROM Connection WHERE id = ?`;
-          //@ts-ignore
-          const res = await conn.execute(deletionQuery, [connection.id]);
-          console.log(res);
-        } else console.log(e);
-      }
-    }),
-  );
-};
+//async function deleteComment(event) {
+//if (event.body) {
+//[>* @type {Payload} <]
+//const payload = JSON.parse(event.body);
+//let conn = ConnectionFactory();
+//const client = new ApiGatewayManagementApi({
+//endpoint: `https://${event.requestContext.domainName}/${event.requestContext.stage}`,
+//});
+//const query = `UPDATE Comment SET body = ? WHERE id = ?,`;
+//await conn.execute(query, [
+//`[comment removed by ${payload.deletionAgent}]`,
+//payload.comment_id,
+//]);
+////broadcast to users in channel
+//await Broadcaster(
+//conn,
+//payload.postType,
+//payload.blog_id || payload.project_id,
+//client,
+//);
+//return JSON.stringify({ status: 201 });
+//}
+//}
+/**
+ * @param {import("aws-lambda").APIGatewayProxyEvent} event
+ */
+//async function reactionHandler(event) {
+//if (event.body) {
+//[>* @type {Payload} <]
+//const payload = JSON.parse(event.body);
+//let conn = ConnectionFactory();
+//const client = new ApiGatewayManagementApi({
+//endpoint: `https://${event.requestContext.domainName}/${event.requestContext.stage}`,
+//});
+////
+////ADD SQL LOGIC HERE
+////
+////broadcast to users in channel
+//await Broadcaster(
+//conn,
+//payload.postType,
+//payload.blog_id || payload.project_id,
+//client,
+//);
+//return JSON.stringify({ status: 201 });
+//}
+//}
 
-module.exports = {
-  handler,
-};
+export default handler;

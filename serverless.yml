@@ -19,7 +19,28 @@ functions:
     handler: src/disconnect.disconnect
     events:
       - websocket: $disconnect
-  default:
+  updateConnection:
     handler: src/default.handler
     events:
       - websocket: $default
+  createComment:
+    handler: src/create_comment.handler
+    events:
+      - websocket: 
+            route: createComment
+  updateComment:
+    handler: src/update_comment.handler
+    events:
+      - websocket: 
+            route: commentUpdate
+  #deleteComment:
+    #handler: src/default.deleteComment
+    #events:
+      #- websocket:
+        #route: deleteComment
+  #reactionHandler:
+    #handler: src/default.reactionHandler
+    #events:
+      #- websocket:
+        #route: reactionHandler
+
