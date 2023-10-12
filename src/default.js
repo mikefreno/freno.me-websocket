@@ -1,8 +1,7 @@
 //@ts-check
-import { ConnectionFactory } from "./helper_functions";
+const { ConnectionFactory } = require("./helper_functions");
 /**
  * @typedef {Object} Payload
- * @property {"comment"|"channelUpdate"} messageType
  * @property {"create" | "update" | "delete" | undefined} commentType
  * @property {string | undefined} commentBody
  * @property {"blog" | "project"} postType
@@ -47,11 +46,19 @@ async function handler(event) {
           "UPDATE Connection SET blog_id = ?, project_id = ?, user_id = ? WHERE connection_id = ?";
         const params = [payload.project_id, payload.invoker_id, connectionId];
         await conn.execute(query, params);
-        return JSON.stringify({ status: 201 });
+        return {
+          statusCode: 200,
+          body: `Update Request Success`,
+        };
       }
     } catch (e) {
       console.error(e.message);
       console.error(e.stack);
+
+      return {
+        statusCode: 500,
+        body: `Update Request Failure`,
+      };
     }
   }
 }
@@ -105,5 +112,4 @@ async function handler(event) {
 //return JSON.stringify({ status: 201 });
 //}
 //}
-
-export default handler;
+module.exports = { handler };

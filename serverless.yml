@@ -9,6 +9,8 @@ plugins:
 provider:
   name: aws
   runtime: nodejs18.x
+  logs:
+    websocket: true
 
 functions:
   connect:

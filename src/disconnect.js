@@ -1,15 +1,19 @@
 //@ts-check
-import { ConnectionFactory } from "./helper_functions.js";
+const { ConnectionFactory } = require("./helper_functions");
 /**
  * @param {import("aws-lambda").APIGatewayProxyEvent} event
  */
-export async function disconnect(event) {
+async function disconnect(event) {
   const connectionId = event.requestContext.connectionId;
   if (connectionId) {
     const conn = ConnectionFactory();
     const query = "DELETE FROM Connection WHERE connection_id = ?";
     const results = await conn.execute(query, [connectionId]);
     console.log(results);
+    return {
+      statusCode: 200,
+      body: `disconnect`,
+    };
   }
 }
-export default disconnect;
+module.exports = { disconnect };
